@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Expenses">
+<meta name="theme-color" content="#0D0D0D">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { 
+    height: 100%; 
+    background: #0D0D0D; 
+    color: #E8E4DF; 
+    font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #141414, #1A1A1A);
+    border-bottom: 1px solid #252525;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #F5F0EB;
+  }
+  .header .subtitle {
+    font-size: 12px;
+    color: #706B65;
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  
+  select.month-select {
+    background: #1E1E1E;
+    color: #E8E4DF;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  .tab-bar {
+    display: flex;
+    background: #1E1E1E;
+    border-radius: 10px;
+    border: 1px solid #333;
+    overflow: hidden;
+  }
+  .tab-bar button {
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    color: #706B65;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .tab-bar button.active {
+    background: #E8E4DF;
+    color: #0D0D0D;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    padding: 14px 20px;
+    display: flex;
+    gap: 20px;
+    background: #111;
+    border-bottom: 1px solid #1E1E1E;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: #706B65;
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+  }
+  .progress-wrap {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .progress-track {
+    width: 120px;
+    height: 6px;
+    background: #1E1E1E;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .progress-pct {
+    font-size: 11px;
+    color: #706B65;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Content area */
+  .content { padding: 20px; padding-bottom: 100px; }
+
+  /* Input area */
+  .input-area {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    background: #151515;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid #252525;
+    flex-wrap: wrap;
+  }
+  .input-area input[type="text"] {
+    flex: 1;
+    min-width: 140px;
+    background: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: #E8E4DF;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+  }
+  .input-area input[type="text"]:focus { border-color: #555; }
+  .price-wrap {
+    position: relative;
+    min-width: 100px;
+    flex: 0.4;
+  }
+  .price-wrap .dollar {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #706B65;
+    font-size: 14px;
+    font-family: 'Space Mono', monospace;
+  }
+  .price-wrap input {
+    width: 100%;
+    background: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px 14px 12px 26px;
+    color: #E8E4DF;
+    font-size: 14px;
+    font-family: 'Space Mono', monospace;
+    outline: none;
+  }
+  .price-wrap input:focus { border-color: #555; }
+  .btn-add {
+    background: #333;
+    color: #666;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: default;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add.ready {
+    background: #E8E4DF;
+    color: #0D0D0D;
+    cursor: pointer;
+  }
+  .btn-add.ready:active { transform: scale(0.97); }
+
+  .classify-hint {
+    padding: 4px 14px 0;
+    font-size: 12px;
+    color: #706B65;
+    margin-top: -16px;
+    margin-bottom: 16px;
+  }
+  .classify-hint span { font-weight: 600; }
+
+  /* Transaction list */
+  .tx-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 14px;
+    background: #151515;
+    border-radius: 12px;
+    border: 1px solid #1E1E1E;
+    margin-bottom: 6px;
+    transition: all 0.15s;
+  }
+  .tx-icon { font-size: 18px; margin-right: 12px; flex-shrink: 0; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-name { font-size: 14px; font-weight: 500; color: #E8E4DF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-cat {
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 2px;
+    cursor: pointer;
+    display: inline-block;
+  }
+  .tx-amount {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Space Mono', monospace;
+    color: #E8E4DF;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .tx-delete {
+    background: transparent;
+    border: none;
+    color: #4A4540;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .tx-delete:active { color: #E85D75; }
+
+  .cat-select {
+    background: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    margin-top: 3px;
+    cursor: pointer;
+    outline: none;
+    color: #E8E4DF;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #4A4540;
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state .title { font-size: 16px; font-weight: 500; }
+  .empty-state .sub { font-size: 13px; color: #3A3530; margin-top: 6px; }
+
+  /* Summary */
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .summary-header h2 { font-size: 17px; font-weight: 600; }
+  .btn-budget {
+    background: #1E1E1E;
+    color: #E8E4DF;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-budget.saving { background: #5CB87A; color: #0D0D0D; border-color: #5CB87A; }
+
+  .cat-card {
+    background: #151515;
+    border-radius: 14px;
+    border: 1px solid #1E1E1E;
+    padding: 16px 16px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--cat-color);
+  }
+  .cat-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .cat-label { display: flex; align-items: center; gap: 8px; }
+  .cat-label .icon { font-size: 18px; }
+  .cat-label .name { font-size: 14px; font-weight: 600; }
+  .cat-stats { display: flex; gap: 16px; align-items: baseline; }
+  .cat-stat { text-align: right; }
+  .cat-stat-label { font-size: 9px; color: #706B65; font-family: 'Space Mono', monospace; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cat-stat-value { font-size: 14px; font-weight: 700; font-family: 'Space Mono', monospace; }
+  .cat-stat input {
+    width: 70px;
+    background: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 3px 6px;
+    color: #E8E4DF;
+    font-size: 13px;
+    font-family: 'Space Mono', monospace;
+    text-align: right;
+    outline: none;
+  }
+  .cat-progress {
+    width: 100%;
+    height: 5px;
+    background: #1E1E1E;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .cat-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .over-budget { font-size: 11px; color: #E85D75; margin-top: 6px; font-weight: 500; }
+
+  .cat-txns {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #1E1E1E;
+  }
+  .cat-txn {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 12px;
+    color: #706B65;
+  }
+  .cat-txn-amount { font-family: 'Space Mono', monospace; }
+
+  /* Swipe hint */
+  @media (max-width: 480px) {
+    .stats-bar { gap: 14px; }
+    .stat-value { font-size: 17px; }
+    .progress-wrap { width: 100%; margin-left: 0; margin-top: 4px; }
+    .progress-track { flex: 1; }
+    .cat-stats { gap: 10px; }
+    .cat-stat-value { font-size: 13px; }
+    .input-area { flex-direction: column; }
+    .price-wrap { flex: 1; }
+    .btn-add { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ── Data ──
+const CATEGORIES = {
+  "Groceries": { budget: 500, color: "#5CB87A", icon: "🛒", keywords: ["grocery","groceries","metro","loblaws","no frills","freshco","sobeys","whole foods","costco","walmart grocery","food basics","farm boy","t&t","produce","meat","dairy"] },
+  "Eating Out": { budget: 200, color: "#E86C47", icon: "🍽️", keywords: ["restaurant","uber eats","doordash","skip the dishes","coffee","starbucks","tim hortons","mcdonalds","wendys","pizza","sushi","lunch","dinner","breakfast","bar","pub","beer","wine","chipotle","subway","popeyes","kfc","a&w","harveys","swiss chalet","taco","pho","ramen","takeout","take out","burrito","shawarma"] },
+  "Transportation": { budget: 450, color: "#4A90D9", icon: "🚗", keywords: ["gas","uber","lyft","ttc","presto","parking","car wash","oil change","mechanic","tire","auto","esso","shell","petro","canadian tire","highway","toll","transit","bus","insurance car","car insurance","car payment"] },
+  "Bills & Subscriptions": { budget: 150, color: "#4ECDC4", icon: "📱", keywords: ["phone","cell","mobile","subscription","membership","adobe","microsoft","icloud","dropbox","chatgpt","claude","saas","software","domain","hosting","spotify","netflix","disney","crave","apple music","youtube premium","rogers","bell","fido","virgin","telus","zen planner","gohighlevel"] },
+  "Housing": { budget: 1000, color: "#7B68AE", icon: "🏠", keywords: ["rent","mortgage","hydro","electricity","water","internet","enbridge","gas bill","property tax","condo fee","home insurance"] },
+  "Entertainment": { budget: 150, color: "#E85D75", icon: "🎬", keywords: ["movie","cinema","concert","ticket","game","playstation","xbox","steam","event","show","bowling","arcade","escape room"] },
+  "Shopping": { budget: 100, color: "#D4A843", icon: "🛍️", keywords: ["amazon","walmart","ikea","clothes","shoes","shirt","pants","jacket","winners","marshalls","dollarama","electronics","best buy","staples","home depot"] },
+  "Health & Personal Care": { budget: 100, color: "#A78BFA", icon: "💊", keywords: ["pharmacy","doctor","dentist","physio","chiro","massage","prescription","advil","tylenol","shoppers","rexall","supplement","protein","vitamin","haircut","barber","grooming","skincare","deodorant","toothpaste"] },
+  "Expensed to Work": { budget: null, color: "#F59E0B", icon: "💼", keywords: ["expensed","work expense","reimbursed","business expense","client","mileage"] },
+  "Other": { budget: 100, color: "#8E8E93", icon: "📦", keywords: [] }
+};
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const CAT_KEYS = Object.keys(CATEGORIES);
+
+// ── State ──
+let state = {
+  transactions: [],
+  budgets: Object.fromEntries(Object.entries(CATEGORIES).map(([k,v]) => [k, v.budget])),
+  selectedMonth: new Date().getMonth(),
+  selectedYear: new Date().getFullYear(),
+  view: "entry",
+  nameInput: "",
+  priceInput: "",
+  editingId: null,
+  editingBudgets: false,
+  tempBudgets: {}
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem("expense_tracker_data");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.transactions = parsed.transactions || [];
+      state.budgets = { ...state.budgets, ...(parsed.budgets || {}) };
+    }
+  } catch(e) { console.warn("Failed to load state", e); }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem("expense_tracker_data", JSON.stringify({
+      transactions: state.transactions,
+      budgets: state.budgets
+    }));
+  } catch(e) { console.warn("Failed to save state", e); }
+}
+
+// ── Helpers ──
+function classify(name) {
+  const lower = name.toLowerCase();
+  for (const [cat, data] of Object.entries(CATEGORIES)) {
+    if (cat === "Other") continue;
+    if (data.keywords.some(kw => lower.includes(kw))) return cat;
+  }
+  return "Other";
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(n);
+}
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Render ──
+function render() {
+  const monthTx = state.transactions.filter(t => t.month === state.selectedMonth && (t.year || state.selectedYear) === state.selectedYear);
+  const catTotals = {};
+  CAT_KEYS.forEach(c => { catTotals[c] = monthTx.filter(t => t.category === c).reduce((s,t) => s + t.amount, 0); });
+  const totalSpend = monthTx.reduce((s,t) => s + t.amount, 0);
+  const totalBudget = Object.values(state.budgets).reduce((s,b) => s + (b || 0), 0);
+  const remaining = totalBudget - totalSpend;
+  const pct = totalBudget > 0 ? Math.round((totalSpend / totalBudget) * 100) : 0;
+
+  let spendColor = totalSpend > totalBudget ? "#E85D75" : "#5CB87A";
+  let remColor = remaining >= 0 ? "#5CB87A" : "#E85D75";
+  let barColor = totalSpend > totalBudget ? "linear-gradient(90deg,#E85D75,#E8474F)" : totalSpend > totalBudget * 0.8 ? "linear-gradient(90deg,#D4A843,#E8A020)" : "linear-gradient(90deg,#5CB87A,#4ECDC4)";
+
+  let monthOpts = MONTHS.map((m,i) => `<option value="${i}" ${i === state.selectedMonth ? "selected" : ""}>${m}</option>`).join("");
+
+  let html = `
+    <div class="header">
+      <div>
+        <h1>EXPENSE TRACKER</h1>
+        <div class="subtitle">${MONTHS[state.selectedMonth]} ${state.selectedYear}</div>
+      </div>
+      <div class="header-right">
+        <select class="month-select" id="monthSelect">${monthOpts}</select>
+        <div class="tab-bar">
+          <button class="${state.view === 'entry' ? 'active' : ''}" data-view="entry">Transactions</button>
+          <button class="${state.view === 'summary' ? 'active' : ''}" data-view="summary">Summary</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-bar">
+      <div>
+        <div class="stat-label">Spent</div>
+        <div class="stat-value" style="color:${spendColor}">${fmt(totalSpend)}</div>
+      </div>
+      <div>
+        <div class="stat-label">Budget</div>
+        <div class="stat-value" style="color:#E8E4DF">${fmt(totalBudget)}</div>
+      </div>
+      <div>
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value" style="color:${remColor}">${fmt(remaining)}</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div>
+        </div>
+        <span class="progress-pct">${pct}%</span>
+      </div>
+    </div>
+
+    <div class="content">
+  `;
+
+  if (state.view === "entry") {
+    const ready = state.nameInput.trim() && state.priceInput;
+    const previewCat = state.nameInput.trim() ? classify(state.nameInput) : null;
+
+    html += `
+      <div class="input-area">
+        <input type="text" id="nameInput" placeholder="Transaction name (e.g. Uber Eats, Costco)" value="${esc(state.nameInput)}">
+        <div class="price-wrap">
+          <span class="dollar">$</span>
+          <input type="text" id="priceInput" inputmode="decimal" placeholder="0.00" value="${esc(state.priceInput)}">
+        </div>
+        <button class="btn-add ${ready ? 'ready' : ''}" id="addBtn">Add</button>
+      </div>
+    `;
+
+    if (previewCat) {
+      const cd = CATEGORIES[previewCat];
+      html += `<div class="classify-hint">Will classify as: <span style="color:${cd.color}">${cd.icon} ${previewCat}</span></div>`;
+    }
+
+    if (monthTx.length === 0) {
+      html += `<div class="empty-state"><div class="icon">📝</div><div class="title">No transactions yet</div><div class="sub">Add your first expense above</div></div>`;
+    } else {
+      const reversed = [...monthTx].reverse();
+      reversed.forEach(t => {
+        const cd = CATEGORIES[t.category] || CATEGORIES["Other"];
+        if (state.editingId === t.id) {
+          let catOpts = CAT_KEYS.map(c => `<option value="${esc(c)}" ${c === t.category ? "selected" : ""}>${c}</option>`).join("");
+          html += `
+            <div class="tx-item">
+              <span class="tx-icon">${cd.icon}</span>
+              <div class="tx-info">
+                <div class="tx-name">${esc(t.name)}</div>
+                <select class="cat-select" data-txid="${t.id}">${catOpts}</select>
+              </div>
+              <div class="tx-amount">${fmt(t.amount)}</div>
+              <button class="tx-delete" data-del="${t.id}">✕</button>
+            </div>`;
+        } else {
+          html += `
+            <div class="tx-item">
+              <span class="tx-icon">${cd.icon}</span>
+              <div class="tx-info">
+                <div class="tx-name">${esc(t.name)}</div>
+                <div class="tx-cat" style="color:${cd.color}" data-edit="${t.id}">${t.category} ✎</div>
+              </div>
+              <div class="tx-amount">${fmt(t.amount)}</div>
+              <button class="tx-delete" data-del="${t.id}">✕</button>
+            </div>`;
+        }
+      });
+    }
+  } else {
+    // Summary view
+    html += `
+      <div class="summary-header">
+        <h2>Category Breakdown</h2>
+        <button class="btn-budget ${state.editingBudgets ? 'saving' : ''}" id="budgetBtn">${state.editingBudgets ? 'Save Budgets' : 'Edit Budgets'}</button>
+      </div>
+    `;
+
+    CAT_KEYS.forEach(cat => {
+      const data = CATEGORIES[cat];
+      const spent = catTotals[cat] || 0;
+      const budget = state.editingBudgets ? (state.tempBudgets[cat] ?? state.budgets[cat]) : state.budgets[cat];
+      const hasBudget = budget !== null && budget !== undefined;
+      const pctCat = hasBudget && budget > 0 ? (spent / budget) * 100 : 0;
+      const rem = hasBudget ? budget - spent : null;
+
+      let barHtml = "";
+      if (hasBudget) {
+        let bColor = pctCat > 100 ? "#E85D75" : pctCat > 80 ? "#D4A843" : data.color;
+        barHtml = `<div class="cat-progress"><div class="cat-progress-fill" style="width:${Math.min(pctCat,100)}%;background:${bColor}"></div></div>`;
+      } else if (spent > 0) {
+        barHtml = `<div class="cat-progress"><div class="cat-progress-fill" style="width:100%;background:${data.color};opacity:0.4"></div></div>`;
+      }
+
+      let budgetDisplay = "";
+      if (state.editingBudgets && hasBudget) {
+        budgetDisplay = `<input type="text" inputmode="decimal" data-budgetcat="${esc(cat)}" value="${budget}">`;
+      } else {
+        budgetDisplay = `<div class="cat-stat-value" style="color:#E8E4DF">${hasBudget ? fmt(budget) : '—'}</div>`;
+      }
+
+      let txnList = "";
+      const catTxns = monthTx.filter(t => t.category === cat);
+      if (catTxns.length > 0) {
+        txnList = `<div class="cat-txns">${catTxns.map(t => `<div class="cat-txn"><span>${esc(t.name)}</span><span class="cat-txn-amount">${fmt(t.amount)}</span></div>`).join("")}</div>`;
+      }
+
+      html += `
+        <div class="cat-card" style="--cat-color:${data.color}">
+          <div class="cat-card-top">
+            <div class="cat-label">
+              <span class="icon">${data.icon}</span>
+              <span class="name">${cat}</span>
+            </div>
+            <div class="cat-stats">
+              <div class="cat-stat">
+                <div class="cat-stat-label">Spent</div>
+                <div class="cat-stat-value" style="color:${data.color}">${fmt(spent)}</div>
+              </div>
+              <div class="cat-stat">
+                <div class="cat-stat-label">Budget</div>
+                ${budgetDisplay}
+              </div>
+              <div class="cat-stat">
+                <div class="cat-stat-label">Remaining</div>
+                <div class="cat-stat-value" style="color:${rem === null ? '#706B65' : rem >= 0 ? '#5CB87A' : '#E85D75'}">${rem === null ? '—' : fmt(rem)}</div>
+              </div>
+            </div>
+          </div>
+          ${barHtml}
+          ${hasBudget && pctCat > 100 ? `<div class="over-budget">⚠ Over budget by ${fmt(Math.abs(rem))}</div>` : ""}
+          ${txnList}
+        </div>
+      `;
+    });
+  }
+
+  html += `</div>`;
+  document.getElementById("app").innerHTML = html;
+  bindEvents();
+}
+
+// ── Events ──
+function bindEvents() {
+  // Month select
+  const ms = document.getElementById("monthSelect");
+  if (ms) ms.addEventListener("change", e => { state.selectedMonth = parseInt(e.target.value); render(); });
+
+  // Tabs
+  document.querySelectorAll(".tab-bar button").forEach(btn => {
+    btn.addEventListener("click", () => { state.view = btn.dataset.view; state.editingId = null; render(); });
+  });
+
+  // Name input
+  const ni = document.getElementById("nameInput");
+  if (ni) {
+    ni.addEventListener("input", e => { state.nameInput = e.target.value; render(); ni.focus(); restoreCursor(ni, e.target.selectionStart); });
+    ni.addEventListener("keydown", e => { if (e.key === "Enter") addTransaction(); });
+  }
+
+  // Price input
+  const pi = document.getElementById("priceInput");
+  if (pi) {
+    pi.addEventListener("input", e => {
+      state.priceInput = e.target.value.replace(/[^0-9.]/g, "");
+      render();
+      const el = document.getElementById("priceInput");
+      if (el) el.focus();
+    });
+    pi.addEventListener("keydown", e => { if (e.key === "Enter") addTransaction(); });
+  }
+
+  // Add button
+  const ab = document.getElementById("addBtn");
+  if (ab) ab.addEventListener("click", addTransaction);
+
+  // Delete buttons
+  document.querySelectorAll("[data-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.transactions = state.transactions.filter(t => t.id !== parseInt(btn.dataset.del));
+      saveState();
+      render();
+    });
+  });
+
+  // Edit category click
+  document.querySelectorAll("[data-edit]").forEach(el => {
+    el.addEventListener("click", () => { state.editingId = parseInt(el.dataset.edit); render(); });
+  });
+
+  // Category select change
+  document.querySelectorAll(".cat-select").forEach(sel => {
+    sel.addEventListener("change", e => {
+      const txid = parseInt(sel.dataset.txid);
+      state.transactions = state.transactions.map(t => t.id === txid ? { ...t, category: e.target.value } : t);
+      state.editingId = null;
+      saveState();
+      render();
+    });
+    sel.addEventListener("blur", () => { state.editingId = null; render(); });
+  });
+
+  // Budget button
+  const bb = document.getElementById("budgetBtn");
+  if (bb) bb.addEventListener("click", () => {
+    if (state.editingBudgets) {
+      state.budgets = { ...state.budgets, ...state.tempBudgets };
+      state.editingBudgets = false;
+      saveState();
+    } else {
+      state.tempBudgets = { ...state.budgets };
+      state.editingBudgets = true;
+    }
+    render();
+  });
+
+  // Budget inputs
+  document.querySelectorAll("[data-budgetcat]").forEach(inp => {
+    inp.addEventListener("input", e => {
+      state.tempBudgets[inp.dataset.budgetcat] = parseFloat(e.target.value) || 0;
+    });
+  });
+}
+
+function restoreCursor(el, pos) {
+  requestAnimationFrame(() => { if (el && el === document.activeElement) el.setSelectionRange(pos, pos); });
+}
+
+function addTransaction() {
+  if (!state.nameInput.trim() || !state.priceInput) return;
+  const amount = parseFloat(state.priceInput);
+  if (isNaN(amount) || amount <= 0) return;
+  state.transactions.push({
+    id: Date.now(),
+    name: state.nameInput.trim(),
+    amount,
+    category: classify(state.nameInput),
+    date: new Date().toISOString(),
+    month: state.selectedMonth,
+    year: state.selectedYear
+  });
+  state.nameInput = "";
+  state.priceInput = "";
+  saveState();
+  render();
+  // Focus name input after adding
+  requestAnimationFrame(() => { const ni = document.getElementById("nameInput"); if (ni) ni.focus(); });
+}
+
+// ── Init ──
+loadState();
+render();
+
+// ── Service Worker Registration ──
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(err => console.log("SW registration failed:", err));
+}
+</script>
+</body>
+</html>
